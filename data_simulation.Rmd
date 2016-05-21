@@ -1,0 +1,338 @@
+---
+title: "data_simulation"
+author: "Payal"
+date: "May 9, 2016"
+output: html_document
+---
+# Data Simulation Project
+**This Data Simulation** is based on the project on breast cancer by **Biology Department.** In the original project, patterns and trends in various blood markers, personal, family and clinical variables are examined in subjects with and without breast cancer which I would try to replicate here.
+
+### Background
+* Breast cancer is a disease in which malignant (cancer) cells form in the tissues of the breast. The damaged cells can invade surrounding tissue, but with early detection and treatment, most people continue a normal life. 
+* It is the most commonly diagnosed cancer in women.
+* One in eight women will be diagnosed with breast cancer in her lifetime.
+* Breast cancer is the second leading cause of cancer death among women.
+* Each year it is estimated that over 230,000 women in the United States will be diagnosed with breast cancer and more than 40,000 will die.
+http://www.nationalbreastcancer.org/breast-cancer-facts
+* Human cytomegalovirus (HCMV) infects nearly 50-90% of the population worldwide.
+* With the rapid advancement in DNA and protein technology, presence of several viruses has been detected in breast cancer and normal tissue.
+* Recently HCMV genome and antigen has been found to be present in various types of human cancer like breast cancer, brain cancer, colon cancer, etc. 
+http://www.ncbi.nlm.nih.gov/pmc/articles/PMC4142708/
+* In this study, pattern of various blood markers as well as several personal and family histroy variables are examined to understand the relation between breast cancer and these variables.
+* Also, viral IL10 relation, viral sero-status in relation with breast cancer has been studied to understand the role of cytomegalo virus (CMV) in breast cancer.
+
+### Data Simulation
+Data for various variables like blood markers, sero status, age, minutes of exercise per week, smoking history, history of menstruation in 2015, family history of breast cancer and history of breast cancer in five years has been simulated.
+Here, I have tried to maintain the distribution, spread of various variables in the real project as well as correlation among the variables. Aim here is to observe whether the results of various plots, statistical test as well as regression models match the original study outcome or not. 
+Original study has 250 volunteers and I would also be simulating data for 13 variables and 250 rows. Here, history of breast cancer in 5 years is the response variable. 
+The original study shows prevalence of breast cancer in older age or in menopausal women which aligns with the domain knowledge. However, the attributes like smoking history, family history of breast cancer which are known to be associated with cancer, are not found to be significant in modelling breast cancer as a function of these variables in the original study. Also, minutes of exercise performed per week is found to be positively related with breast cancer which actually as per our knowledge should have inverse relation with breast cancer. In the simulated dataset, we would examine these attributes, their pattern and association with breast cancer. 
+
+### Features
+* Feature 1 - Age
+* Feature 2 - hIL10_Conc
+* Feature 3 - vIL10_Conc
+* Feature 4 - TNFalpha_Conc
+* Feature 5 - IL6_COnc
+* Feature 6 - IL8_Conc
+* Feature 7 - IL12_COnc
+* Feature 8 - CMV_IgG (TRUE,FALSE)
+* Feature 9 - Exercise_Minutes (Minutes of exercise per week)
+* Feature 10 - smoke_history (TRUE,FALSE)
+* Feature 11 - breast_cancer_5_years -  Response variable
+* Feature 12 - family_breast.cancer (TRUE,FALSE)
+* Feature 13 - menstruation_2015 (TRUE,FALSE)
+
+```{r}
+library(manipulate)
+library(ggplot2)
+set.seed(123)
+
+logistic <- function(t) 1 / (1 + exp(-t))
+
+generateDataset <- function(N){
+  
+  Age <- round(runif(N,15,80))
+  Age <- ifelse(Age<18,22,Age)
+  Age <- ifelse(Age==74,58,Age)
+  Age <- ifelse(Age==76,57,Age)
+  Age <- ifelse(Age==78,19,Age)
+  Age <- ifelse(Age==71,19,Age)
+  Age <- ifelse(Age==73,20,Age)
+  Age <- ifelse(Age==79,59,Age)
+  Age <- ifelse(Age==75,21,Age)
+  Age <- ifelse(Age==78,19,Age)
+  
+  hIL10_Conc <- (rpois(N,lambda = 1) + rnorm(N,0,0.3))*50 - 0.5 * Age
+  hIL10_Conc <- ifelse(hIL10_Conc < 0, 0, hIL10_Conc)
+  
+  vIL10_Conc <- (rpois(N,lambda = 1) + rnorm(N,0,0.3))*200 - 0.8 * Age
+  vIL10_Conc <- ifelse(vIL10_Conc < 0, 0, vIL10_Conc)
+  
+  TNF_alpha_Conc <- (rpois(N,lambda = 1) + rnorm(N,0,0.3))*216 - 0.98 * Age
+  TNF_alpha_Conc <- ifelse(TNF_alpha_Conc < 0, 0, TNF_alpha_Conc)
+  
+  IL6_Conc <- (rpois(N,lambda = 1) + rnorm(N,0,0.3))*134 - 0.88 * Age
+  IL6_Conc <- ifelse(IL6_Conc < 0, 0, IL6_Conc)
+  
+  IL8_Conc <- (rpois(N,lambda = 1) + rnorm(N,0,0.3))*137 - 0.8 * Age
+  IL8_Conc <- ifelse(IL8_Conc <0, 0, IL8_Conc)
+  
+  IL12_Conc <- (rpois(N,lambda = 1) + rnorm(N,0,0.3))*378 - 0.94 * Age
+  IL12_Conc <- ifelse(IL12_Conc <0, 0, IL12_Conc)
+  
+  CMV_IgG <- runif(N,0,1) < 0.45
+  
+  Exercise_minutes <- round(0.3*rnorm(N,148,159) + 3 * rpois(N,lambda = 1)) * 3
+  Exercise_minutes <- ifelse(Exercise_minutes<0,0,Exercise_minutes)
+  
+  smoking_history <- runif(N) < .11 * logistic((Age-49)/10)
+  
+  breast_cancer_5_years <- runif(N) < .60 * logistic((Age-52)/10)
+  
+  family_breast_cancer <- runif(N)  + .06 * 
+    as.numeric(breast_cancer_5_years) < 0.25
+  
+  menstruation_2015 <- runif(N) > 1.9 * logistic((Age-60)/10)
+  
+  data.frame(Age,hIL10_Conc,vIL10_Conc,TNF_alpha_Conc,IL6_Conc,
+             IL8_Conc,IL12_Conc,CMV_IgG,
+             Exercise_minutes,smoking_history,
+             breast_cancer_5_years,family_breast_cancer,
+             menstruation_2015)
+}
+
+```
+
+
+```{r}
+N = 250
+
+dfmydata <- generateDataset(N)
+
+summary(dfmydata)
+
+str(dfmydata)
+
+table(dfmydata$breast_cancer_5_years)
+
+table(dfmydata$smoking_history)
+
+table(dfmydata$CMV_IgG)
+
+table(dfmydata$family_breast_cancer)
+
+table(dfmydata$menstruation_2015)
+
+cor(dfmydata)
+```
+
+Dividing data-set into breast cancer and no breast cancer subsets.
+```{r}
+breast_cancer <- subset(dfmydata,dfmydata$breast_cancer_5_years == TRUE)
+no_breast_cancer <- subset(dfmydata,dfmydata$breast_cancer_5_years == FALSE)
+```
+
+```{r}
+ggplot(dfmydata,aes(x=hIL10_Conc)) + 
+  geom_histogram(aes(fill=breast_cancer_5_years))+
+  facet_wrap(~breast_cancer_5_years)+ggtitle("hIL10 Concentration")
+
+ggplot(dfmydata,aes(x=vIL10_Conc))+
+  geom_histogram(aes(fill=breast_cancer_5_years))+
+  facet_wrap(~breast_cancer_5_years)+ggtitle("vIL10 Concentration")
+
+ggplot(dfmydata,aes(x=TNF_alpha_Conc))+
+  geom_histogram(aes(fill=breast_cancer_5_years))+
+  facet_wrap(~breast_cancer_5_years)+ggtitle("TNF Alpha Concentration")
+
+ggplot(dfmydata,aes(x=IL6_Conc))+
+  geom_histogram(aes(fill=breast_cancer_5_years))+
+  facet_wrap(~breast_cancer_5_years)+ggtitle("IL6 Concentration")
+
+ggplot(dfmydata,aes(x=IL8_Conc))+
+  geom_histogram(aes(fill=breast_cancer_5_years))+
+  facet_wrap(~breast_cancer_5_years)+ggtitle("IL8 Concentration")
+
+ggplot(dfmydata,aes(x=IL12_Conc))+
+  geom_histogram(aes(fill=breast_cancer_5_years))+
+  facet_wrap(~breast_cancer_5_years)+ggtitle("IL12 Concentration")
+
+ggplot(dfmydata,aes(x=Age))+
+  geom_histogram(aes(fill=breast_cancer_5_years))+
+  facet_wrap(~breast_cancer_5_years)+ggtitle("Age")
+
+ggplot(dfmydata,aes(x=Exercise_minutes))+
+  geom_histogram(aes(fill=breast_cancer_5_years))+
+  facet_wrap(~breast_cancer_5_years)+ggtitle("Exercise_minutes")
+
+ggplot(dfmydata,aes(x=vIL10_Conc))+
+  geom_histogram(aes(fill=CMV_IgG))+
+  facet_wrap(~CMV_IgG)+
+  ggtitle("Viral IL10 in sero-positive and sero-negative subjects")
+
+ggplot(dfmydata,aes(x=hIL10_Conc)) + 
+  geom_density(aes(fill=breast_cancer_5_years))+
+  facet_wrap(~breast_cancer_5_years)+ggtitle("hIL10 Concentration")
+
+ggplot(dfmydata,aes(x=hIL10_Conc,y=vIL10_Conc)) +
+  geom_point(aes(color=breast_cancer_5_years))+
+  ggtitle("hIL10 vs Viral IL10")
+  
+```
+In the above plots it is seen that hIl10 concentration has slightly wider spread in healthy subjecs than in breast cancer subjects. Viral IL10 has generally similar spread in healthy as well as breast cancer subjects ranging from around 0 to 800. But, healthy subset has few higher values which extend till 875.TNF alpha has generally similar spread in healthy as well as breast cancer subsets which extends till 750, but, healthy subset has few values which are greater than 750. Il6 concentration is seen higher in no breast cancer subset than in no breast cancer subset. Il8 concentration has generally similar spread in both the subsets, but, there are few higher values in healthy subset. Il12 concentration is similar both the subsets with few missing values for bins inbetween. It is seen that age has more wider spread in no breast cancer subset ranging from around 18 to 78 whereas age in breast cancer subjects spreads from around 32 to 80. Minutes of exercise per week has generally similar spread in healthy as well as breast cancer subjects. In the scatter plot of hIL10 vs Viral IL10, it is seen that there are higher values in healthy subset than in breast cancer subset. 
+
+```{r}
+shapiro.test(breast_cancer$hIL10_Conc)
+shapiro.test(no_breast_cancer$hIL10_Conc)
+stand_ctrl.set1 <- no_breast_cancer$hIL10_Conc - median(no_breast_cancer$hIL10_Conc)
+stand_case1 <- breast_cancer$hIL10_Conc - median(breast_cancer$hIL10_Conc)
+ansari.test(stand_ctrl.set1, stand_case1) 
+t.test(no_breast_cancer$hIL10_Conc,breast_cancer$hIL10_Conc,var.equal = F)
+```
+Shapiro test for hIL10 concentration in breast cancer subset shows that it is not normally distrbuted. Shapiro test for hIL10 concentration in no breast cancer subset also shows that it is not normally distrbuted. Ratio of variance of hIL10 concentration in no breast cancer subset and breast cancer subset is not equal to 1. Welch two sample t test performed on hIL10 concentration in breast cancer as well as no breast cancer subsets shows that hIL10 concentration has similar mean in both the subsets. This finding is different from the result of two sample t test on original dataset where difference in mean of hIL concentration in both the subsets was not equal to 0.
+
+```{r}
+shapiro.test(no_breast_cancer$TNF_alpha_Conc)
+shapiro.test(breast_cancer$TNF_alpha_Conc)
+
+stand_ctrl.set2 <- no_breast_cancer$TNF_alpha_Conc - median(no_breast_cancer$TNF_alpha_Conc)
+
+stand_case2 <- breast_cancer$TNF_alpha_Conc - median(breast_cancer$TNF_alpha_Conc)
+
+ansari.test(stand_ctrl.set2,stand_case2)
+
+t.test(no_breast_cancer$TNF_alpha_Conc, breast_cancer$TNF_alpha_Conc,var.equal = T)
+
+```
+Shapiro test performed on TNF alpha in breast cancer and no breast cancer subsets, showed that they were not normally distributed. Ansari test performed on TNF alpha concentration in breast cancer and no breast cancer subset shows that TNF alpha in both the subsets have equal variance. Two sample t test performed on both the subsets' TNF alpha concentration shows that difference in mean of TNF alpha in breast cancer and no breast cancer subset is equal to 0. This finding is different from the result of two sample t test on original dataset where difference in mean of TNF alpha concentration in both the subsets was not equal to 0.
+
+```{r}
+shapiro.test(no_breast_cancer$IL12_Conc)
+shapiro.test(breast_cancer$IL12_Conc)
+
+stand_ctrl.set3 <- no_breast_cancer$IL12_Conc - median(no_breast_cancer$IL12_Conc)
+stand_case3 <- breast_cancer$IL12_Conc - median(breast_cancer$IL12_Conc)
+
+ansari.test(stand_ctrl.set3,stand_case3)
+
+t.test(no_breast_cancer$IL12_Conc, breast_cancer$IL12_Conc,var.equal = F)
+
+```
+Shapiro test performed on IL12 concentration in breast cancer and no breast cancer subsets shows that they are not normally distributed. Ansari test performed on IL12 concentration in both the subsets shows that variance of IL12 in both the subset is not equal. Welch two sample t test shows that the difference in the mean of IL12 concentration in breast cancer and no breast cancer subsets is equal to 0. This finding is different from the result of two sample t test on original dataset where difference in mean of IL12 concentration in both the subsets was not equal to 0.
+
+```{r}
+shapiro.test(no_breast_cancer$IL6_Conc)
+shapiro.test(breast_cancer$IL6_Conc)
+
+stand_ctrl.set4 <- no_breast_cancer$IL6_Conc - median(no_breast_cancer$IL6_Conc)
+stand_case4 <- breast_cancer$IL6_Conc - median(breast_cancer$IL6_Conc)
+
+ansari.test(stand_ctrl.set4,stand_case4)
+
+t.test(no_breast_cancer$IL6_Conc,breast_cancer$IL6_Conc)
+
+```
+It is seen that IL6 in breast cancer and no breast cancer subsets is not normally distributed. Ansari test performed on IL6 concentration in breast cancer and no breast cancer subsets shows that variance of IL6 concentration in both the subsets is not equal. Welch two sample t test performed on IL6 concentration in breast cancer and no breast cancer subsets shows that IL6 concentration in both the subsets has equal mean. This finding is different from the result of two sample t test on original dataset where difference in mean of IL6 concentration in both the subsets was not equal to 0.
+
+```{r}
+shapiro.test(no_breast_cancer$IL8_Conc)
+shapiro.test(breast_cancer$IL8_Conc)
+
+stand_ctrl.set5 <- no_breast_cancer$IL8_Conc - median(no_breast_cancer$IL8_Conc)
+stand_case5 <- breast_cancer$IL8_Conc - median(breast_cancer$IL8_Conc)
+
+ansari.test(stand_ctrl.set5,stand_case5)
+
+t.test(no_breast_cancer$IL8_Conc, breast_cancer$IL8_Conc,var.equal = F)
+
+```
+Shapiro test performed on IL8 concentration in breast cancer and no breast cancer subsets show that IL8 concentration is not normally distributed in both the subsets. Ansari test performed on IL8 concentration in both the subsets shows that the variance is not equal in IL8 concnetration in both the subsets. Welch two sample t test performed on IL8 concentration in both the subsets show that mean of IL8 concentration in both the subsets is similar. This finding is different from the result of two sample t test on original dataset where difference in mean of IL8 concentration in both the subsets was not equal to 0.
+
+```{r}
+shapiro.test(no_breast_cancer$vIL10_Conc)
+shapiro.test(breast_cancer$vIL10_Conc)
+
+stand_ctrl.set6 <- no_breast_cancer$vIL10_Conc - median(no_breast_cancer$vIL10_Conc)
+stand_case6 <- breast_cancer$vIL10_Conc - median(breast_cancer$vIL10_Conc)
+
+ansari.test(stand_ctrl.set6,stand_case6)
+
+t.test(no_breast_cancer$vIL10_Conc,breast_cancer$vIL10_Conc, var.equal = T)
+
+```
+It is seen that viral IL10 in breast cancer and no breast cancer subsets is not normally distributed. Ansari test performed on viral IL10 concnetration in breast cancer and no breast cancer subsets shows that ratio of variance of viral IL10 concnetration in both the subsets is equal to 1. Two sample t test performed on viral IL10 concentration in both the subsets shows that viral IL10 concnetration in bothe subsets have similar mean. This finding is same as the original study where viral IL10 concnetration in both the subset have similar mean. 
+```{r}
+shapiro.test(no_breast_cancer$Age)
+shapiro.test(breast_cancer$Age)
+
+stand_ctrl.set7 <- no_breast_cancer$Age - median(no_breast_cancer$Age)
+stand_case.set7 <- breast_cancer$Age - median(breast_cancer$Age)
+
+ansari.test(stand_ctrl.set7,stand_case.set7)
+
+t.test(no_breast_cancer$Age,breast_cancer$Age,var.equal = F)
+
+```
+It is seen that age in no breast cancer subset is not normally distributed. Age in breast cancer subset is normally distributed. Ansari test performed on age in both the subsets shows that age in both the subsets does not have equal variance. Welch two sample t test performed on age in breast cancer and no breast cancer subsets shows that age in both the subsets has different mean. This finding is again same as the original study where age in breast cancer and no breast cancer data-sets has different mean.
+
+```{r}
+fit1 <- glm(dfmydata$breast_cancer_5_years ~ ., data= dfmydata, family = binomial())
+summary(fit1)
+```
+When I tried to predict breast cancer within five years as a function of all the predictor variables, it is seen that only age seem to be the significant varaible with positive fitted coefficient. 
+
+```{r}
+fit2 <- glm(dfmydata$breast_cancer_5_years ~ dfmydata$hIL10_Conc + dfmydata$TNF_alpha_Conc + dfmydata$IL6_Conc + dfmydata$IL8_Conc + dfmydata$IL12_Conc, family = binomial())
+summary(fit2)
+```
+When breast cancer is modelled as a function of various blood markers, hIL10 concentration is seem to be slightly significant with negative fitted coefficient. 
+
+```{r}
+fit3 <- glm(dfmydata$breast_cancer_5_years ~ dfmydata$hIL10_Conc + dfmydata$TNF_alpha_Conc + dfmydata$IL6_Conc + dfmydata$IL8_Conc + dfmydata$IL12_Conc + dfmydata$vIL10_Conc, family = binomial())
+summary(fit3)
+
+```
+When viral IL10 has been added to the model, still only hIL10 concetration seems to significant.
+```{r}
+fit4 <- lm(dfmydata$Age ~ dfmydata$hIL10_Conc + dfmydata$TNF_alpha_Conc + dfmydata$IL6_Conc + dfmydata$IL6_Conc + dfmydata$IL8_Conc + dfmydata$IL12_Conc + dfmydata$vIL10_Conc)
+summary(fit4)
+```
+When age is predicted as a function of blood markers, hIL10 concnetration and IL6 concentration are significant. But, the adjusted R squared of the model is 0.05 which is very low.
+```{r}
+fit5 <- glm(dfmydata$breast_cancer_5_years ~ dfmydata$hIL10_Conc, family = binomial())
+summary(fit5)
+```
+When breast cancer is predicted only as a function of hIL10 concnetration, it is sligtly significant. AIC decreased slightly from the previous logistic regression model. 
+```{r}
+fit6 <- glm(dfmydata$breast_cancer_5_years ~ dfmydata$Age + dfmydata$Exercise_minutes, family = binomial())
+summary(fit6)
+```
+On predicting breast cancer as a function of age and minutes of exercise per week, age is highly significant.
+```{r}
+fit7 <- glm(dfmydata$breast_cancer_5_years ~ dfmydata$CMV_IgG,family = binomial())
+summary(fit7)
+```
+CMV IgG does not seem to be significant.
+```{r}
+fit8 <- glm(dfmydata$breast_cancer_5_years ~ dfmydata$smoking_history + dfmydata$family_breast_cancer, family = binomial())
+summary(fit8)
+```
+Smoking history as well as family history of breast cancer do not seem to be significant.
+```{r}
+fit9 <- glm(dfmydata$breast_cancer_5_years ~ dfmydata$menstruation_2015, family = binomial())
+summary(fit9)
+```
+History of menstruation in 2015 is highly significant and has negative coefficient which also means that history of menstruation reduces the log odd of breast cancer. It can also be said that breast cancer is more prevalent in menopausal group. 
+```{r}
+fit10 <- glm(dfmydata$breast_cancer_5_years ~ dfmydata$Age + dfmydata$menstruation_2015, family = binomial())
+summary(fit10)
+```
+Here, age seem to be a highly significant variable, but, history of menstruation in 2015 is no longer a siginficant variable. 
+```{r}
+fit11 <- glm(dfmydata$breast_cancer_5_years ~ dfmydata$family_breast_cancer, family = binomial())
+summary(fit11)
+```
+Here, family history of breast cancer doesnot seem to be significant.
+
+### Conclusion
+In the original study, it is seen that concentration of blood markers is higher in healthy subjects than in breast cancer subjects. However, here, it is seen that the blood markers are more or less same in healthy as well as breast cancer subjects. Viral IL10 concnetration in the original study is same in healthy as well as breast cancer subjects. Here, also we see that it is more or less same in both the groups. The spread of age and minutes of exercise per week is also same as original study. Two sample t-test performed on all the blood markers has the output which is different from the original study. Viral IL10 and age has similar result of two sample t-test as the original study. When breast cancer is modelled as a function of various variables, age is seen to be significant in predicting breast cancer. This result is also obtained in the original study. When modelling breast cancer as a function of blood markers, hIL10 concentration is slightly significant. In the original study, no blood markers are siginificant in predicting breast cancer. Minutes of exercise per week is positively corelated and significant when breast cancer is predicted as a function of it in the original study which contradicts with the domain knowledge. Here, minutes of exercise is not siginificant when breast cancer is modelled as a function of age and exercise minutes. CMV IgG, smoking history and family history are not significant in predicting breast cancer here. This again matches with the output obtained from the original study. History of menstruation in 2015 is significant when predicting breast cancer as a function of this single variable. But, when age is added to the model, the menstruation history is no longer seen to be significant. In the original study, menstruation history in 2015 is highly significant with negative fitted coefficient. These diference in corelation of various variables with breast cancer can be either due to difference in the correlation among variables, for example, correlation of variables with age, or due to limited number of variables that are being simulated here and hence, the relation among various variables might not be captured. The original study has 175 predictor variables. 
